@@ -20,6 +20,17 @@ class Operations(BinaryOperations):
     def encrypt(self, key):
         print('Encryption starts..')
         self.__pad()
+        self.__DES_cryption(key)
+        print(f"Encryption result:{self.result}")
+
+    def decrypt(self, key):
+        print('Decryption starts..')
+        self.__DES_cryption(key, 'DECRYPT')
+        self.__unpad()
+        self.result = self.data
+        print(f"Decryption result: {self.result}")
+
+    def __DES_cryption(self, key, action='ENCRYPT'):
         self.__generatekeys(key)
         text_blocks = self.nsplit(self.data, 8)
         self.result = []
@@ -29,8 +40,11 @@ class Operations(BinaryOperations):
             g, d = self.nsplit(block, 32)
             for i in range(16):
                 d_e = self.expand(d, self.E)
-                tmp = self.xor(self.keys[i], d_e)
-                tmp = self.substitute(tmp)
+                if action == 'ENCRYPT':
+                    tmp = self.xor(self.keys[i], d_e)
+                else:
+                    tmp = self.xor(self.keys[15 - i], d_e)
+                tmp = self.__substitute(tmp)
                 tmp = self.permutation_by_table(tmp, self.P)
                 tmp = self.xor(g, tmp)
                 g = d
@@ -38,30 +52,9 @@ class Operations(BinaryOperations):
             self.result += self.permutation_by_table(d + g,
                                                      self.IP_INV)
         self.result = self.binary_list_to_str(self.result)
-        print(f"Encryption result:{self.result}")
+        self.data = self.result
 
-    def decrypt(self, key):
-        self.__generatekeys(key)
-        text_blocks = self.nsplit(self.data, 8)
-        self.result = []
-        for block in text_blocks:
-            block = self.str_to_binary_list(block)
-            block = self.permutation_by_table(block, self.IP)
-            g, d = self.nsplit(block, 32)
-            for i in range(16):
-                d_e = self.expand(d, self.E)
-                tmp = self.xor(self.keys[15 - i], d_e)
-                tmp = self.substitute(tmp)
-                tmp = self.permutation_by_table(tmp, self.P)
-                tmp = self.xor(g, tmp)
-                g = d
-                d = tmp
-            self.result += self.permutation_by_table(d + g, self.IP_INV)
-        self.data = self.binary_list_to_str(self.result)
-        self.__unpad()
-        print(f"Decryption result: {self.data}")
-
-    def substitute(self, d_e):
+    def __substitute(self, d_e):
         subblocks = self.nsplit(d_e, 6)
         result = list()
         for i in range(len(subblocks)):
@@ -115,8 +108,7 @@ class EncData(Operations):
 
 
 text = Plaintext('secretdatatext')
-text.encrypt('secret_kKK')
+text.encrypt('secret_k')
 s = text.result
 enc = EncData(s)
-enc.encrypt('secret_KKK')
-print(text.result)
+enc.decrypt('secret_k')
