@@ -76,6 +76,10 @@ class Operations(BinaryOperations):
         return [x ^ y for x, y in zip(value1, value2)]
 
     def __generatekeys(self, password):
+        password = password[:8]
+        if len(password)<8:
+            raise AssertionError('Key lenght should be higher or equal 8.')
+
         key = self.str_to_binary_list(password)
         key = self.permutation_by_table(key, self.PC1)
         g, d = self.nsplit(key, 28)
@@ -108,7 +112,7 @@ class EncData(Operations):
 
 
 text = Plaintext('secretdatatext')
-text.encrypt('secret_k')
+text.encrypt('secret_kk')
 s = text.result
 enc = EncData(s)
 enc.decrypt('secret_k')
